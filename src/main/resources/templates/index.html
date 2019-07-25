@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>图书借阅列表</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+
+<div id="app">
+    <el-dialog
+            title="新增学生"
+            :visible.sync="studentDialogVisible"
+            width="30%"
+    >
+        <el-form ref="form" :model="newStudent" label-width="80px">
+            <el-form-item label="学生名称">
+                <el-input v-model="newStudent.name"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="studentDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="addNewStudent">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <el-dialog
+            title="新增书本"
+            :visible.sync="bookDialogVisible"
+            width="30%"
+    >
+        <el-form ref="form" :model="newBook" label-width="80px">
+            <el-form-item label="书本名称">
+                <el-input v-model="newBook.name"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="bookDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="addBook">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <el-dialog
+            title="新增借阅"
+            :visible.sync="borrowDialogVisible"
+            width="30%"
+    >
+        <el-form ref="form" :model="newBorrow" label-width="80px">
+            <el-form-item label="学生名称">
+                <el-input v-model="newBorrow.studentName"></el-input>
+            </el-form-item>
+            <el-form-item label="书本名称">
+                <el-input v-model="newBorrow.bookName"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="borrowDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="addBorrow">确 定</el-button>
+        </span>
+    </el-dialog>
+
+    <div style="margin-top:15px">
+        <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 100px">
+            <el-option label="学生ID" value="1"></el-option>
+            <el-option label="书本ID" value="2"></el-option>
+        </el-select>
+        <el-input placeholder="请输入内容" v-model="criteria" style="padding-bottom:10px;width: 500px"  @keypress.enter.native="search">
+            <el-button slot="append" icon="search" v-on:click="search">搜索</el-button>
+        </el-input>
+        <el-button plain style="margin-left: 20px" v-on:click="studentDialogVisible = true">新增学生</el-button>
+        <el-button plain v-on:click="bookDialogVisible = true">新增书本</el-button>
+        <el-button plain v-on:click="borrowDialogVisible = true">新增借阅</el-button>
+        <el-button plain v-on:click="deleteBorrow">删除借阅</el-button>
+        <el-table
+                ref="testTable"
+                :data="tableData"
+                style="width:100%"
+                border
+                :default-sort = "{prop: 'id', order: 'ascending'}"
+                @row-click="handleClick"
+        >
+            <el-table-column type="selection"></el-table-column>
+            <el-table-column
+                    prop="id"
+                    label="Id"
+                    sortable
+                    show-overflow-tooltip>
+            </el-table-column>
+            <el-table-column
+                    prop="studentName"
+                    label="学生姓名"
+                    sortable>
+            </el-table-column>
+            <el-table-column
+                    prop="bookName"
+                    label="书本"
+                    sortable>
+            </el-table-column>
+            <el-table-column
+                    prop="studentId"
+                    label="学生ID"
+                    sortable>
+            </el-table-column>
+            <el-table-column
+                    prop="bookId"
+                    label="书本ID"
+                    sortable>
+            </el-table-column>
+        </el-table>
+
+        <div align="center">
+            <el-pagination
+                    @current-change="pageChange"
+                    :current-page="currentPage"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="totalCount">
+            </el-pagination>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<!-- 引入组件 -->
+<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data() {
+            return {
+                tableData: [],
+                url:'/borrow/list',
+                studentUrl: '/student',
+                bookUrl: '/book',
+                borrowUrl: '/borrow',
+                criteria: '',
+                select: '',
+                pageSize: 10,
+                currentPage: 1,
+                start: 1,
+                totalCount: 10,
+                studentDialogVisible: false,
+                newStudent:{
+                    name: null
+                },
+                bookDialogVisible: false,
+                newBook:{
+                    name: null
+                },
+                borrowDialogVisible: false,
+                newBorrow:{
+                    studentName: null,
+                    bookName: null
+                }
+            };
+        },
+        methods: {
+            //从服务器读取数据
+            loadData: function(criteria, pageNum, pageSize){
+                var selectVal = this.select;
+                var params = {
+                    page: pageNum,
+                    size: pageSize
+                }
+                if (criteria != null && criteria.trim() != '') {
+                    if ("1" == selectVal){
+                        params.studentId = criteria;
+                        params.page = 1;
+                    } else if ("2" == selectVal) {
+                        params.bookId = criteria;
+                        params.page = 1;
+                    }
+                }
+                this.$http.get(this.url,{params:params}).then(function(res){
+                    var data = res.data;
+                    this.tableData = data.data.list;
+                    this.totalCount = data.data.totalCount;
+                },function(){
+                    console.log('failed');
+                });
+            },
+            //搜索
+            search: function(){
+                this.loadData(this.criteria, this.currentPage, this.pageSize);
+            },
+            //页码变更
+            pageChange: function(val) {
+                this.currentPage = val;
+                this.loadData(this.criteria, this.currentPage, this.pageSize);
+            },
+            //点击行响应
+            handleClick: function(row, event, column){
+                this.highlightId = row.id;
+            },
+            addNewStudent: function () {
+                this.$http.post(this.studentUrl, this.newStudent).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.hintSuccess("添加成功");
+                    } else {
+                        this.hintFail("添加失败");
+                    }
+                },function(){
+                    console.log('failed');
+                });
+
+                this.studentDialogVisible = false;
+            },
+            addBook: function () {
+                this.$http.post(this.bookUrl, this.newBook).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.hintSuccess("添加成功");
+                    } else {
+                        this.hintFail("添加失败");
+                    }
+                },function(){
+                    console.log('failed');
+                });
+
+                this.bookDialogVisible = false;
+            },
+            addBorrow: function () {
+
+            },
+            deleteBorrow: function () {
+
+            },
+            hintSuccess: function (message) {
+                this.$notify({
+                    title: '成功',
+                    message: message,
+                    type: 'success',
+                    duration: 1000
+                });
+            },
+            hintFail: function (message) {
+                this.$notify.error({
+                    title: '错误',
+                    message: message,
+                    duration: 1000
+                });
+            }
+        }
+    })
+
+    //载入数据
+    vue.loadData(vue.criteria, 1, 10);
+</script>
+</html>
