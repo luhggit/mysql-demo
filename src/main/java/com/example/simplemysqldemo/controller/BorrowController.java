@@ -3,13 +3,16 @@ package com.example.simplemysqldemo.controller;
 import com.example.simplemysqldemo.dao.BorrowRecordMapper;
 import com.example.simplemysqldemo.po.BorrowRecord;
 import com.example.simplemysqldemo.util.ResultUtils;
+import com.example.simplemysqldemo.vo.BorrowEditVO;
 import com.example.simplemysqldemo.vo.BorrowQueryVO;
 import com.example.simplemysqldemo.vo.BorrowRecordVO;
 import com.example.simplemysqldemo.vo.BorrowVO;
 import com.example.simplemysqldemo.vo.PageQueryVO;
 import com.example.simplemysqldemo.vo.ResponseVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -74,6 +77,20 @@ public class BorrowController {
     @DeleteMapping("/{id}")
     public ResponseVO<Void> delete(@PathVariable Integer id) {
         borrowRecordMapper.deleteByPrimaryKey(id);
+
+        return ResultUtils.success();
+    }
+
+    /**
+     * 修改借阅记录
+     * @param borrowEditVO
+     * @return
+     */
+    @PatchMapping
+    public ResponseVO<Void> add(@RequestBody BorrowEditVO borrowEditVO) {
+        BorrowRecord borrowRecord = new BorrowRecord();
+        BeanUtils.copyProperties(borrowEditVO, borrowRecord);
+        borrowRecordMapper.updateByPrimaryKeySelective(borrowRecord);
 
         return ResultUtils.success();
     }

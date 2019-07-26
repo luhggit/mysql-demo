@@ -21,7 +21,7 @@
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button @click="studentDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="addNewStudent">确 定</el-button>
+            <el-button type="primary" @click="addBorrow">确 定</el-button>
         </span>
     </el-dialog>
 
@@ -74,8 +74,41 @@
         </span>
     </el-dialog>
 
+    <el-dialog
+            title="编辑借阅"
+            :visible.sync="selectedBorrowDialogVisible"
+            width="30%"
+    >
+        <el-form ref="form" :model="selectedBorrow" label-width="80px">
+            <el-form-item label="学生名称">
+                <el-select v-model="selectedBorrow.studentId" placeholder="selectedBorrow.studentName">
+                    <el-option
+                            v-for="item in students"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="书本名称">
+                <el-select v-model="selectedBorrow.bookId" placeholder="selectedBorrow.bookName">
+                    <el-option
+                            v-for="item in books"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="selectedBorrowDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="editBorrow">确 定</el-button>
+        </span>
+    </el-dialog>
+
     <div style="margin-top:15px">
-        <el-select v-model="select" slot="prepend" placeholder="请选择" style="width: 100px">
+        <el-select v-model="select" slot="prepend" placeholder="学生ID" style="width: 100px">
             <el-option label="学生ID" value="1"></el-option>
             <el-option label="书本ID" value="2"></el-option>
         </el-select>
@@ -163,7 +196,7 @@
                 bookUrl: '/book',
                 borrowUrl: '/borrow',
                 criteria: '',
-                select: '',
+                select: '1', // 默认学生id
                 pageSize: 10,
                 currentPage: 1,
                 start: 1,
@@ -182,7 +215,15 @@
                     bookId: null
                 },
                 books:[],
-                students:[]
+                students:[],
+                selectedBorrow:{
+                    id: null,
+                    studentId: null,
+                    bookId: null,
+                    studentName:null,
+                    bookName:null
+                },
+                selectedBorrowDialogVisible: false
             };
         },
         methods: {
@@ -289,8 +330,13 @@
                 });
             },
             handleEdit(index, row) {
-                console.log(index);
-                console.log(row);
+                this.selectedBorrow.id = row.id;
+                this.selectedBorrow.bookId = row.bookId;
+                this.selectedBorrow.studentId = row.studentId;
+                this.selectedBorrow.bookName = row.bookName;
+                this.selectedBorrow.studentName = row.studentName;
+
+                this.selectedBorrowDialogVisible = true;
             },
             hintSuccess: function (message) {
                 this.$notify({
@@ -330,7 +376,23 @@
                 },function(){
                     console.log('failed');
                 });
-            }
+            },
+            editBorrow: function () {
+                this.$http.patch(this.borrowUrl, this.selectedBorrow).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.hintSuccess("编辑成功");
+
+                        this.loadData(this.criteria, this.currentPage, this.pageSize);
+                    } else {
+                        this.hintFail("编辑失败");
+                    }
+                },function(){
+                    console.log('failed');
+                });
+
+                this.selectedBorrowDialogVisible = false;
+            },
         }
     })
 
