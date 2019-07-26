@@ -14,7 +14,7 @@
             :visible.sync="studentDialogVisible"
             width="30%"
     >
-        <el-form ref="form" :model="newStudent" label-width="80px">
+        <el-form ref="form" :model="newStudent" label-width="80px" @keypress.enter.native="addNewStudent">
             <el-form-item label="学生名称">
                 <el-input v-model="newStudent.name"></el-input>
             </el-form-item>
@@ -30,7 +30,7 @@
             :visible.sync="bookDialogVisible"
             width="30%"
     >
-        <el-form ref="form" :model="newBook" label-width="80px">
+        <el-form ref="form" :model="newBook" label-width="80px"  @keypress.enter.native="addBook">
             <el-form-item label="书本名称">
                 <el-input v-model="newBook.name"></el-input>
             </el-form-item>
@@ -48,10 +48,24 @@
     >
         <el-form ref="form" :model="newBorrow" label-width="80px">
             <el-form-item label="学生名称">
-                <el-input v-model="newBorrow.studentName"></el-input>
+                <el-select v-model="newBorrow.studentId" placeholder="请选择">
+                    <el-option
+                            v-for="item in students"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
             </el-form-item>
             <el-form-item label="书本名称">
-                <el-input v-model="newBorrow.bookName"></el-input>
+                <el-select v-model="newBorrow.bookId" placeholder="请选择">
+                    <el-option
+                            v-for="item in books"
+                            :key="item.id"
+                            :label="item.name"
+                            :value="item.id">
+                    </el-option>
+                </el-select>
             </el-form-item>
         </el-form>
         <span slot="footer" class="dialog-footer">
@@ -71,13 +85,11 @@
         <el-button plain style="margin-left: 20px" v-on:click="studentDialogVisible = true">新增学生</el-button>
         <el-button plain v-on:click="bookDialogVisible = true">新增书本</el-button>
         <el-button plain v-on:click="borrowDialogVisible = true">新增借阅</el-button>
-        <el-button plain v-on:click="deleteBorrow">删除借阅</el-button>
         <el-table
                 ref="testTable"
                 :data="tableData"
                 style="width:100%"
                 border
-                :default-sort = "{prop: 'id', order: 'ascending'}"
                 @row-click="handleClick"
         >
             <el-table-column type="selection"></el-table-column>
@@ -107,6 +119,17 @@
                     label="书本ID"
                     sortable>
             </el-table-column>
+            <el-table-column label="操作">
+                <template slot-scope="scope">
+                    <el-button
+                            size="mini"
+                            @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+                    <el-button
+                            size="mini"
+                            type="danger"
+                            @click="deleteBorrow(scope.$index, scope.row)">删除</el-button>
+                </template>
+            </el-table-column>
         </el-table>
 
         <div align="center">
@@ -114,7 +137,7 @@
                     @current-change="pageChange"
                     :current-page="currentPage"
                     :page-size="pageSize"
-                    layout="total, sizes, prev, pager, next, jumper"
+                    layout="total, prev, pager, next, jumper"
                     :total="totalCount">
             </el-pagination>
         </div>
@@ -155,9 +178,11 @@
                 },
                 borrowDialogVisible: false,
                 newBorrow:{
-                    studentName: null,
-                    bookName: null
-                }
+                    studentId: null,
+                    bookId: null
+                },
+                books:[],
+                students:[]
             };
         },
         methods: {
@@ -203,6 +228,9 @@
                     var data = res.data;
                     if (data.status == 200) {
                         this.hintSuccess("添加成功");
+
+                        this.loadData(this.criteria, this.currentPage, this.pageSize);
+                        this.loadStudents();
                     } else {
                         this.hintFail("添加失败");
                     }
@@ -217,6 +245,9 @@
                     var data = res.data;
                     if (data.status == 200) {
                         this.hintSuccess("添加成功");
+
+                        this.loadData(this.criteria, this.currentPage, this.pageSize);
+                        this.loadBooks();
                     } else {
                         this.hintFail("添加失败");
                     }
@@ -227,10 +258,39 @@
                 this.bookDialogVisible = false;
             },
             addBorrow: function () {
+                this.$http.post(this.borrowUrl, this.newBorrow).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.hintSuccess("添加成功");
 
+                        this.loadData(this.criteria, this.currentPage, this.pageSize);
+                    } else {
+                        this.hintFail("添加失败");
+                    }
+                },function(){
+                    console.log('failed');
+                });
+
+                this.borrowDialogVisible = false;
             },
-            deleteBorrow: function () {
+            deleteBorrow: function (index, row) {
+                var id = row.id;
+                this.$http.delete(this.borrowUrl + "/" + id).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.hintSuccess("删除成功");
 
+                        this.loadData(this.criteria, this.currentPage, this.pageSize);
+                    } else {
+                        this.hintFail("删除失败");
+                    }
+                },function(){
+                    console.log('failed');
+                });
+            },
+            handleEdit(index, row) {
+                console.log(index);
+                console.log(row);
             },
             hintSuccess: function (message) {
                 this.$notify({
@@ -246,11 +306,37 @@
                     message: message,
                     duration: 1000
                 });
+            },
+            loadStudents: function () {
+                this.$http.get(this.studentUrl).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.students = data.data;
+                    } else {
+                        this.hintFail(data.info);
+                    }
+                },function(){
+                    console.log('failed');
+                });
+            },
+            loadBooks: function () {
+                this.$http.get(this.bookUrl).then(function(res){
+                    var data = res.data;
+                    if (data.status == 200) {
+                        this.books = data.data;
+                    } else {
+                        this.hintFail(data.info);
+                    }
+                },function(){
+                    console.log('failed');
+                });
             }
         }
     })
 
     //载入数据
     vue.loadData(vue.criteria, 1, 10);
+    vue.loadStudents();
+    vue.loadBooks();
 </script>
 </html>

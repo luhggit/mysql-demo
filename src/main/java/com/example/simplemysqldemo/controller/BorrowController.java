@@ -8,7 +8,9 @@ import com.example.simplemysqldemo.vo.BorrowRecordVO;
 import com.example.simplemysqldemo.vo.BorrowVO;
 import com.example.simplemysqldemo.vo.PageQueryVO;
 import com.example.simplemysqldemo.vo.ResponseVO;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,6 +62,18 @@ public class BorrowController {
         borrowRecord.setBookId(borrowRecordVO.getBookId());
         borrowRecord.setStudentId(borrowRecordVO.getStudentId());
         borrowRecordMapper.insertSelective(borrowRecord);
+
+        return ResultUtils.success();
+    }
+
+    /**
+     * 删除借阅记录
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    public ResponseVO<Void> delete(@PathVariable Integer id) {
+        borrowRecordMapper.deleteByPrimaryKey(id);
 
         return ResultUtils.success();
     }

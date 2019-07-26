@@ -72,14 +72,14 @@
 
   <select id="listByQueryVO" resultType="com.example.simplemysqldemo.vo.BorrowVO">
     select borrow.id, student.id studentId, student.name studentName, book.id bookId, book.name bookName from
-    borrow_record borrow inner join student on student.id = borrow.id inner join book on book.id = borrow.id  where 1 = 1
+    borrow_record borrow inner join student on student.id = borrow.student_id inner join book on book.id = borrow.book_id  where 1 = 1
     <if test="queryVO.studentId != null">
       and student.id = #{queryVO.studentId}
     </if>
     <if test="queryVO.bookId != null">
       and book.id = #{queryVO.bookId}
     </if>
-    order by id desc
+    order by borrow.id desc
     limit #{queryVO.offset}, #{queryVO.size}
   </select>
   <select id="countByQueryVO" resultType="java.lang.Integer">

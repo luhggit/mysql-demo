@@ -5,12 +5,14 @@ import com.example.simplemysqldemo.po.Book;
 import com.example.simplemysqldemo.util.ResultUtils;
 import com.example.simplemysqldemo.vo.BookVO;
 import com.example.simplemysqldemo.vo.ResponseVO;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author lhg
@@ -35,5 +37,16 @@ public class BookController {
         bookMapper.insertSelective(book);
 
         return ResultUtils.success();
+    }
+
+    /**
+     * 获取所有的书本
+     * @return
+     */
+    @GetMapping
+    public ResponseVO<List<Book>> listAll() {
+        List<Book> books = bookMapper.listAll();
+
+        return ResultUtils.success(books);
     }
 }
