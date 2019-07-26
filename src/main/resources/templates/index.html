@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>图书借阅列表</title>
@@ -21,7 +21,7 @@
         </el-form>
         <span slot="footer" class="dialog-footer">
             <el-button @click="studentDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="addBorrow">确 定</el-button>
+            <el-button type="primary" @click="addNewStudent">确 定</el-button>
         </span>
     </el-dialog>
 
@@ -330,11 +330,7 @@
                 });
             },
             handleEdit(index, row) {
-                this.selectedBorrow.id = row.id;
-                this.selectedBorrow.bookId = row.bookId;
-                this.selectedBorrow.studentId = row.studentId;
-                this.selectedBorrow.bookName = row.bookName;
-                this.selectedBorrow.studentName = row.studentName;
+                this.selectedBorrow = row;
 
                 this.selectedBorrowDialogVisible = true;
             },
